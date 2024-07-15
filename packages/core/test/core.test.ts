@@ -399,5 +399,38 @@ describe(World, () => {
       world.removeComponent(entity, "age")
       expect(query.entities).toEqual([])
     })
+
+    it("when removing an entity, multiple onEntityRemoveds don't re-add the entity", () => {
+      interface ViewEntity {
+        a: number
+        b: number
+        c?: number
+      }
+
+      const world = new World<ViewEntity>()
+
+      // Need to call world.with("a") before world.with("b")
+      world.with("a")
+      const bQuery = world.with("b")
+
+      // aQuery needs a subscription to either add or remove, doesn't require content
+      world.with("a").onEntityRemoved.subscribe(() => {})
+
+      bQuery.onEntityAdded.subscribe((entity) => {
+        world.addComponent(entity, "c", 4)
+      })
+
+      bQuery.onEntityRemoved.subscribe((entity) => {
+        world.removeComponent(entity, "c")
+      })
+
+      world.add({ a: 1, b: 3 })
+
+      world.clear()
+
+      expect(world.entities).toHaveLength(0)
+      expect(world.with("a").entities).toHaveLength(0)
+      expect(world.with("b").entities).toHaveLength(0)
+    })
   })
 })
