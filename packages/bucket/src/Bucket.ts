@@ -125,9 +125,6 @@ export class Bucket<E> implements Iterable<E> {
   remove(entity: E) {
     /* TODO: Return early if entity is not in bucket. */
     if (this.has(entity)) {
-      /* Emit our own onEntityRemoved event. */
-      this.onEntityRemoved.emit(entity)
-
       /* Get the entity's current position. */
       const index = this.entityPositions.get(entity)!
       this.entityPositions.delete(entity)
@@ -144,6 +141,9 @@ export class Bucket<E> implements Iterable<E> {
 
       /* Bump version */
       this._version++
+
+      /* Emit our own onEntityRemoved event. */
+      this.onEntityRemoved.emit(entity)
     }
 
     return entity
