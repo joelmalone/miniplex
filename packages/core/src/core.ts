@@ -155,7 +155,7 @@ export class World<E extends {} = any>
       const future = { ...entity }
       delete future[component]
 
-      this.reindex(entity, future)
+      this.reindex(entity, future, true)
     }
 
     /* Remove the component. */
@@ -247,14 +247,15 @@ export class World<E extends {} = any>
    *
    * @param entity The entity to reindex.
    * @param future The entity that the entity will become in the future.
+   * @param isRemoving True if the caller is removing a component.
    */
-  reindex(entity: E, future = entity) {
+  reindex(entity: E, future = entity, isRemoving = false) {
     /* Return early if this world doesn't know about the entity. */
     if (!this.has(entity)) return
 
     /* Notify all queries about the change. */
     for (const query of this.queries) {
-      query.evaluate(entity, future)
+      query.evaluate(entity, future, isRemoving)
     }
   }
 
@@ -439,14 +440,15 @@ export class Query<E> extends Bucket<E> implements IQueryableBucket<E> {
    *
    * @param entity The entity to evaluate.
    * @param future The entity to evaluate against. If not specified, the entity will be evaluated against itself.
+   * @param isRemoving True if the caller is removing a component.
    */
-  evaluate(entity: any, future = entity) {
+  evaluate(entity: any, future = entity, isRemoving = false) {
     if (!this.isConnected) return
 
     const wanted = this.want(future)
     const has = this.has(entity)
 
-    if (wanted && !has) {
+    if (!isRemoving && wanted && !has) {
       this.add(entity)
     } else if (!wanted && has) {
       this.remove(entity)
